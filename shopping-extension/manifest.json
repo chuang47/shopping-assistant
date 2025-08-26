@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Shopping Assistant (MVP)",
+  "version": "1.0.0",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Shopping Assistant"
+  },
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  "permissions": ["storage"]
+}
