@@ -5,6 +5,7 @@ import fetch from 'node-fetch';
 
 const app = express();
 app.use(cors());
+app.use(express.static('public'));
 app.use(express.json());
 
 const SERPAPI_KEY = process.env.SERPAPI_KEY;

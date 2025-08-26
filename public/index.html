@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Shopping Assistant</title>
+  <style>
+    :root { --bg:#0f1115; --card:#151924; --text:#e7eaf0; --muted:#9aa3b2; --accent:#3b82f6; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background: var(--bg); color: var(--text); }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    .chat { background: var(--card); border: 1px solid #202636; border-radius: 14px; padding: 12px; }
+    .row { display: flex; gap: 10px; }
+    input[type="text"] { flex: 1; padding: 12px 14px; border-radius: 10px; border: 1px solid #202636; background:#0c0f16; color: var(--text); }
+    button { padding: 12px 16px; border-radius: 10px; border: 0; background: var(--accent); color: white; cursor: pointer; }
+    button:disabled { opacity: .6; cursor: not-allowed; }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 8px; min-height: 18px; }
+    .grid { margin-top: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+    .card { background:#0c0f16; border: 1px solid #202636; border-radius: 12px; overflow: hidden; }
+    .card a { display: block; color: inherit; text-decoration: none; }
+    .card img { width: 100%; height: 160px; object-fit: cover; background:#111522; }
+    .meta { padding: 10px; }
+    .title { font-size: 13px; line-height: 1.3; max-height: 2.6em; overflow: hidden; }
+    .row2 { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; font-size: 12px; color: var(--muted); }
+    .pill { background:#151b2a; padding: 2px 8px; border-radius: 999px; }
+    footer { margin-top: 20px; color: var(--muted); font-size: 12px; text-align:center; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>🛍️ Shopping Assistant</h1>
+    <div class="chat">
+      <form id="f" class="row" autocomplete="off">
+        <input id="q" type="text" placeholder="e.g. white t-shirt mens medium" autofocus>
+        <button id="go" type="submit">Search</button>
+      </form>
+      <div id="hint" class="hint"></div>
+      <div id="grid" class="grid"></div>
+    </div>
+    <footer>Type a natural language query and I’ll fetch results from /search</footer>
+  </div>
+
+  <script>
+    const form = document.getElementById('f');
+    const q = document.getElementById('q');
+    const hint = document.getElementById('hint');
+    const grid = document.getElementById('grid');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const query = q.value.trim();
+      if (!query) return;
+      setBusy(true);
+      hint.textContent = 'Searching...';
+      grid.innerHTML = '';
+      try {
+        const url = '/search?' + new URLSearchParams({ q: query }).toString();
+        const r = await fetch(url);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const items = await r.json();
+        if (!Array.isArray(items) || items.length === 0) {
+          hint.textContent = 'No results. Try rephrasing (e.g., "men medium white crewneck t-shirt").';
+          return;
+        }
+        hint.textContent = `Found ${items.length} results`;
+        grid.innerHTML = items.map(toCard).join('');
+      } catch (err) {
+        console.error(err);
+        hint.textContent = 'Error fetching results. Check server logs.';
+      } finally {
+        setBusy(false);
+      }
+    });
+
+    function toCard(item) {
+      const title = esc(item.title || 'Product');
+      const price = item.price ? ('$' + item.price) : '';
+      const source = esc(item.source || '');
+      const img = item.image || '';
+
+      return `
+        <div class="card">
+          <a href="${item.url}" target="_blank" rel="noopener">
+            <img src="${img}" alt="">
+            <div class="meta">
+              <div class="title" title="${title}">${title}</div>
+              <div class="row2">
+                <span class="pill">${price || '—'}</span>
+                <span>${source}</span>
+              </div>
+            </div>
+          </a>
+        </div>
+      `;
+    }
+
+    function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function setBusy(b) { document.getElementById('go').disabled = b; q.disabled = b; }
+
+    // Optional: preload a demo query
+    q.value = 'white t-shirt mens medium';
+  </script>
+</body>
+</html>
